@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BUDGET — Performance Finance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body, #root { height: 100%; }
+  body { background: #080808; font-family: 'Exo 2', sans-serif; color: #e8e8e8; overflow: hidden; -webkit-text-size-adjust: 100%; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #0f0f0f; }
+  ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+  input, select, textarea { font-family: inherit; }
+
+  /* ── Layout grids (desktop) ─────────────────────────────────── */
+  .app-shell  { display: flex; height: 100vh; background: #080808; color: #e8e8e8; }
+  .sidebar    { width: 210px; flex-shrink: 0; background: #080808; border-right: 1px solid #141414; display: flex; flex-direction: column; padding: 20px 0; }
+  .sidebar-bottom { margin-top: auto; padding: 20px 16px 0; border-top: 1px solid #111; }
+  .main       { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+  .main-body  { flex: 1; overflow-y: auto; padding: 20px 24px; }
+  .grid-3       { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .grid-2       { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-side    { display: grid; grid-template-columns: 1fr 1.4fr; gap: 12px; }
+  .grid-budget-vs-spent { display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px; }
+  .grid-cards   { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .grid-form-3  { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .grid-add-budget { display: grid; grid-template-columns: 1fr 1fr auto; gap: 16px; align-items: flex-start; }
+
+  .sidebar-brand   { padding: 0 16px 24px 16px; border-bottom: 1px solid #111; margin-bottom: 20px; }
+  .sidebar-period  { padding: 0 14px 20px 14px; margin-bottom: 8px; }
+  .nav-item        { display: flex; align-items: center; gap: 10px; padding: 9px 14px; cursor: pointer; margin-bottom: 1px; border-left: 2px solid transparent; transition: all 0.15s; user-select: none; }
+  .nav-item:hover  { background: #0d0d0d; }
+  .nav-item.active { background: #141414; border-left-color: #555; }
+  .nav-icon        { font-size: 14px; width: 18px; text-align: center; opacity: 0.3; }
+  .nav-item.active .nav-icon { opacity: 0.9; }
+  .nav-label       { font-size: 12px; letter-spacing: 0.14em; color: #3a3a3a; font-family: 'Exo 2'; font-weight: 600; text-transform: uppercase; white-space: nowrap; }
+  .nav-item.active .nav-label { color: #ccc; }
+  .main-header     { padding: 16px 24px; border-bottom: 1px solid #111; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; gap: 10px; }
+  .main-header-date{ font-family: 'IBM Plex Mono'; font-size: 11px; color: #222; letter-spacing: 0.06em; white-space: nowrap; }
+
+  /* ── Mobile (≤ 768 px) ──────────────────────────────────────── */
+  @media (max-width: 768px) {
+    body { overflow: auto; }
+    html, body, #root { height: auto; min-height: 100%; }
+    .app-shell { flex-direction: column; height: auto; min-height: 100vh; }
+    .sidebar {
+      width: 100%; flex-direction: row; align-items: center; gap: 4px;
+      padding: 10px 12px; border-right: none; border-bottom: 1px solid #141414;
+      overflow-x: auto; overflow-y: hidden; flex-wrap: nowrap;
+      -webkit-overflow-scrolling: touch;
+    }
+    .sidebar > * { flex-shrink: 0; }
+    .sidebar-bottom { margin-top: 0; padding: 0 0 0 12px; border-top: none; border-left: 1px solid #111; display: flex; align-items: center; gap: 8px; }
+    .main { overflow: visible; }
+    .main-body { overflow: visible; padding: 14px 12px 24px; }
+    .grid-3, .grid-2, .grid-side, .grid-budget-vs-spent, .grid-cards, .grid-form-3, .grid-add-budget {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .sidebar-brand { padding: 0 12px 0 4px; border-bottom: none; border-right: 1px solid #111; margin-bottom: 0; margin-right: 6px; }
+    .sidebar-brand > div:nth-child(2) { display: none; }   /* hide subtitle on mobile */
+    .sidebar-period { display: none; }                      /* hide PERIOD label on mobile */
+    .nav-item { padding: 6px 10px; border-left: none; border-bottom: 2px solid transparent; margin-bottom: 0; border-radius: 4px; }
+    .nav-item.active { border-left: none; border-bottom-color: #555; background: #141414; }
+    .nav-label { font-size: 11px; letter-spacing: 0.1em; }
+    .sidebar-bottom { padding-left: 8px; margin-left: 4px; }
+    .sidebar-bottom > div { display: none; }                /* hide ACCENT COLOR label on mobile */
+    .sidebar-bottom .accent-row { display: flex; flex-direction: row !important; gap: 6px !important; margin-bottom: 0 !important; }
+    .sidebar-bottom .accent-row button span:not(.dot) { display: none; }
+    .reset-btn { width: auto !important; padding: 6px 10px !important; font-size: 9px; white-space: nowrap; }
+    .main-header { padding: 12px 14px; flex-wrap: wrap; }
+    .main-header-date { display: none; }
+    .main-title { font-size: 18px !important; }
+    .color-wheel { transform: scale(0.95); }
+  }
+  @media (max-width: 380px) {
+    .nav-label { display: none; }                            /* icon-only on tiny screens */
+    .nav-icon { opacity: 0.6; }
+    .nav-item.active .nav-icon { opacity: 1; }
+  }
+
+  @media (max-width: 768px) {
+    .tx-list-header { display: none !important; }            /* txn header columns don't fit on phones */
+    /* Make number / date inputs play nice on iOS */
+    input[type="number"], input[type="date"], input[type="text"], select { font-size: 16px !important; }
+    /* Modal-ish overlays should be flexible */
+    button { -webkit-tap-highlight-color: transparent; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ── localStorage hook ──────────────────────────────────────────────────────
+function useLocalStorage(key, initial) {
+  const [val, setVal] = useState(() => {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw != null ? JSON.parse(raw) : initial;
+    } catch { return initial; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+  }, [key, val]);
+  return [val, setVal];
+}
+
+// ── THEME ──────────────────────────────────────────────────────────────────
+const TWEAK_DEFAULTS = { accentColor: '#c4973a' };
+const THEME_OPTIONS = [
+  { label: 'GOLD',  value: '#c4973a' },
+  { label: 'BLUE',  value: '#1a5fd4' },
+  { label: 'SILVER',value: '#a0aab8' },
+];
+
+// ── DATA ───────────────────────────────────────────────────────────────────
+// Empty starter — user begins fresh. The "Reset Data" button restores this empty state.
+const INITIAL_TRANSACTIONS = [];
+
+const INITIAL_BUDGETS = [
+  { category:'Housing',       limit:2200, color:'#1a5fd4' },
+  { category:'Food',          limit:600,  color:'#4d8fcc' },
+  { category:'Transport',     limit:900,  color:'#00a85a' },
+  { category:'Utilities',     limit:250,  color:'#0d4f7c' },
+  { category:'Entertainment', limit:100,  color:'#d42525' },
+  { category:'Health',        limit:200,  color:'#b8387a' },
+  { category:'Shopping',      limit:400,  color:'#b83060' },
+];
+
+const INITIAL_SAVINGS_GOALS = [
+  { id:1, name:'Emergency Fund',          target:20000, saved:14200, color:'#1a5fd4' },
+  { id:2, name:'Track Day — Nürburgring', target:8000,  saved:3400,  color:'#00a85a' },
+  { id:3, name:'Car Upgrade',             target:35000, saved:9800,  color:'#c4973a' },
+  { id:4, name:'Vacation',                target:5000,  saved:4200,  color:'#b8387a' },
+];
+
+// 6-month history is computed live from transactions (see computeMonthlyData)
+function computeMonthlyData(transactions, monthsBack = 7) {
+  const now = new Date();
+  const out = [];
+  for (let i = monthsBack - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const monthName = d.toLocaleString('en-US', { month: 'short' });
+    const inMonth = transactions.filter(t => t.date && t.date.startsWith(ym));
+    out.push({
+      month: monthName,
+      ym,
+      income:  inMonth.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0),
+      expense: inMonth.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0),
+    });
+  }
+  return out;
+}
+
+const CAT_ICONS = { Housing:'⌂', Food:'◈', Transport:'◉', Utilities:'◎', Entertainment:'◆', Health:'◇', Shopping:'◰', Salary:'◈', Freelance:'◍', Investment:'◈', Miscellaneous:'•' };
+const INCOME_CATEGORIES = ['Salary','Freelance','Investment','Other Income'];
+const MISC_CATEGORY = 'Miscellaneous';   // expenses can be untagged from any budget
+// Helper: spent on a budget = transactions tagged to it + manual adjustment
+const computeSpent = (b, transactions) =>
+  transactions.filter(t=>t.type==='expense'&&t.category===b.category).reduce((s,t)=>s+t.amount,0)
+  + (Number(b.manualSpent) || 0);
+// Build the category dropdown options for a transaction form, given current budgets + type
+// Expenses always get a "Miscellaneous" option — tagging to a budget is optional.
+const categoryOptionsFor = (type, budgets) =>
+  type === 'income'
+    ? INCOME_CATEGORIES
+    : [...budgets.map(b=>b.category), MISC_CATEGORY];
+
+const fmt    = n => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:0,maximumFractionDigits:0}).format(n);
+const fmtDec = n => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
+
+// ── Primitives ─────────────────────────────────────────────────────────────
+function Card({ children, style={} }) {
+  return <div style={{ background:'#0f0f0f', border:'1px solid #1e1e1e', borderRadius:2, padding:'20px 22px', ...style }}>{children}</div>;
+}
+function SectionLabel({ children }) {
+  return (
+    <div style={{ fontSize:10, letterSpacing:'0.18em', color:'#3a3a3a', textTransform:'uppercase', fontFamily:'IBM Plex Mono', marginBottom:14, display:'flex', alignItems:'center', gap:8 }}>
+      <div style={{ width:16, height:1, background:'#2a2a2a' }} />
+      {children}
+      <div style={{ flex:1, height:1, background:'#1a1a1a' }} />
+    </div>
+  );
+}
+
+function Stat({ label, value, sub, accent, income, danger, customColor }) {
+  const valColor = customColor ? customColor : danger ? '#ff4d4d' : income ? '#00c46a' : accent ? 'var(--accent)' : '#e8e8e8';
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+      <div style={{ fontSize:11, letterSpacing:'0.16em', color:'#555', textTransform:'uppercase', fontFamily:'Exo 2', fontWeight:600 }}>{label}</div>
+      <div style={{ fontSize:34, fontWeight:700, color: valColor, fontFamily:'IBM Plex Mono', letterSpacing:'-0.03em', lineHeight:1 }}>{value}</div>
+      {sub && <div style={{ fontSize:11, color:'#3a3a3a', fontFamily:'Exo 2', letterSpacing:'0.08em' }}>{sub}</div>}
+    </div>
+  );
+}
+
+function DonutChart({ data, total }) {
+  const cx=90, cy=90, r=70, stroke=18, circ=2*Math.PI*r;
+  let offset=0;
+  const segs = data.map(d => { const dash=(d.value/total)*circ; const s={...d,dash,offset}; offset+=dash; return s; });
+  return (
+    <div style={{ position:'relative', width:180, height:180, flexShrink:0 }}>
+      <svg width={180} height={180}>
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#1a1a1a" strokeWidth={stroke} />
+        {segs.map((s,i)=>(
+          <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={s.color} strokeWidth={stroke}
+            strokeDasharray={`${s.dash} ${circ-s.dash}`} strokeDashoffset={-s.offset}
+            style={{ transform:'rotate(-90deg)', transformOrigin:'90px 90px' }} />
+        ))}
+      </svg>
+      <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+        <div style={{ fontSize:9, letterSpacing:'0.15em', color:'#444', fontFamily:'IBM Plex Mono' }}>TOTAL</div>
+        <div style={{ fontSize:18, fontWeight:700, fontFamily:'IBM Plex Mono', color:'#e8e8e8', letterSpacing:'-0.02em' }}>{fmt(total)}</div>
+      </div>
+    </div>
+  );
+}
+
+function BarChart({ data }) {
+  const maxVal = Math.max(1, ...data.map(d=>Math.max(d.income,d.expense)));  // floor at 1 so all-zero data renders flat bars instead of NaN
+  const H = 120;
+  return (
+    <div style={{ display:'flex', alignItems:'flex-end', gap:6, height:H+30, paddingTop:10 }}>
+      {data.map((d,i)=>{
+        const iH=(d.income/maxVal)*H, eH=(d.expense/maxVal)*H, isLast=i===data.length-1;
+        const incomeColor = isLast ? '#00c46a' : '#0a3d22';
+        const incomeBorder = isLast ? 'none' : '1px solid #0d4a28';
+        const expenseColor = isLast ? '#1a0a0a' : '#0f0f0f';
+        const expenseBorder = `1px solid ${isLast ? '#ff4d4d88' : '#1e1e1e'}`;
+        return (
+          <div key={i} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:2 }}>
+            <div style={{ display:'flex', alignItems:'flex-end', gap:2, height:H }}>
+              <div style={{ width:'45%', height:iH, background: incomeColor, borderRadius:'1px 1px 0 0', border: incomeBorder, borderBottom:'none' }} />
+              <div style={{ width:'45%', height:eH, background: expenseColor, borderRadius:'1px 1px 0 0', border: expenseBorder, borderBottom:'none' }} />
+            </div>
+            <div style={{ fontSize:9, color: isLast ? '#888' : '#333', fontFamily:'IBM Plex Mono' }}>{d.month}</div>
+          </div>
+        );
+      })}
+      <div style={{ display:'flex', gap:12, position:'absolute', top:8, right:22 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:4 }}><div style={{ width:8, height:8, background:'#00c46a', borderRadius:1 }} /><span style={{ fontSize:9, color:'#444', fontFamily:'IBM Plex Mono' }}>INCOME</span></div>
+        <div style={{ display:'flex', alignItems:'center', gap:4 }}><div style={{ width:8, height:8, border:'1px solid #ff4d4d', borderRadius:1 }} /><span style={{ fontSize:9, color:'#444', fontFamily:'IBM Plex Mono' }}>EXPENSE</span></div>
+      </div>
+    </div>
+  );
+}
+
+function ProgressBar({ label, spent, limit, color }) {
+  const pct=Math.min(spent/limit,1), over=spent>limit;
+  const barColor = over ? '#ff4d4d' : pct>0.8 ? '#fb923c' : color;
+  return (
+    <div style={{ marginBottom:14 }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:5 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <div style={{ width:6, height:6, background:barColor }} />
+          <span style={{ fontSize:12, color:'#888' }}>{label}</span>
+        </div>
+        <div style={{ fontFamily:'IBM Plex Mono', fontSize:11, color: over ? '#ff4d4d' : '#666' }}>
+          {fmt(spent)} <span style={{ color:'#333' }}>/ {fmt(limit)}</span>
+        </div>
+      </div>
+      <div style={{ height:3, background:'#1a1a1a', borderRadius:1, overflow:'hidden' }}>
+        <div style={{ height:'100%', width:`${pct*100}%`, background:barColor, borderRadius:1, transition:'width 0.6s cubic-bezier(.4,0,.2,1)' }} />
+      </div>
+    </div>
+  );
+}
+
+function TransactionRow({ t, onDelete }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 8px', background: hov ? '#141414' : 'transparent', borderBottom:'1px solid #111', transition:'background 0.15s' }}>
+      <div style={{ width:32, height:32, background:'#161616', border:'1px solid #222', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, flexShrink:0, borderRadius:1 }}>
+        {CAT_ICONS[t.category] || '◈'}
+      </div>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ fontSize:13, color:'#ccc', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{t.desc}</div>
+        <div style={{ fontSize:10, color:'#3a3a3a', fontFamily:'IBM Plex Mono', letterSpacing:'0.06em' }}>{t.category} · {t.date}</div>
+      </div>
+      <div style={{ fontFamily:'IBM Plex Mono', fontSize:14, fontWeight:700, color: t.type==='income' ? '#34d399' : '#ff5555', whiteSpace:'nowrap' }}>
+        {t.type==='income' ? '+' : '-'}{fmt(t.amount)}
+      </div>
+      {onDelete && hov && <button onClick={()=>onDelete(t.id)} style={{ background:'none', border:'none', color:'#333', cursor:'pointer', fontSize:12, padding:'4px', marginLeft:4 }}>✕</button>}
+    </div>
+  );
+}
+
+function Dashboard({ transactions, budgets }) {
+  const income  = transactions.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const expense = transactions.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const net     = income - expense;
+  const catSpend = budgets.map(b => ({ ...b, spent: computeSpent(b, transactions) }));
+  const donutData = catSpend.map(c=>({label:c.category,value:c.spent,color:c.color})).filter(d=>d.value>0);
+  const monthly = computeMonthlyData(transactions, 7);
+  const currentMonth = monthly[monthly.length - 1];
+  const currentMonthLabel = new Date().toLocaleString('en-US', { month: 'short', year: 'numeric' });
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+      <div className="grid-3">
+        <Card><Stat label="Net Balance"    value={fmtDec(net)}  accent sub={income>0?`+${((net/income)*100).toFixed(1)}% savings rate`:'Add a transaction to start'} /></Card>
+        <Card><Stat label="Total Income"   value={fmt(income)}  income sub={currentMonthLabel} /></Card>
+        <Card><Stat label="Total Expenses" value={fmt(expense)} danger sub={income>0?`${((expense/income)*100).toFixed(0)}% of income`:''} /></Card>
+      </div>
+
+      <div className="grid-side">
+        <Card>
+          <SectionLabel>Spending Breakdown</SectionLabel>
+          <div style={{ display:'flex', gap:16, alignItems:'center' }}>
+            <DonutChart data={donutData} total={expense} />
+            <div style={{ flex:1, display:'flex', flexDirection:'column', gap:6 }}>
+              {donutData.map((d,i)=>(
+                <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                    <div style={{ width:4, height:4, background:d.color, flexShrink:0 }} />
+                    <span style={{ fontSize:11, color:'#666' }}>{d.label}</span>
+                  </div>
+                  <span style={{ fontFamily:'IBM Plex Mono', fontSize:10, color:'#555' }}>{((d.value/expense)*100).toFixed(0)}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+        <Card style={{ position:'relative' }}>
+          <SectionLabel>6-Month Overview</SectionLabel>
+          <BarChart data={monthly} />
+          <div style={{ display:'flex', justifyContent:'space-between', marginTop:8, paddingTop:8, borderTop:'1px solid #141414' }}>
+            <div style={{ fontSize:10, color:'#333', fontFamily:'IBM Plex Mono' }}>{currentMonth.month.toUpperCase()} INCOME: <span style={{ color:'#00c46a' }}>{fmt(currentMonth.income)}</span></div>
+            <div style={{ fontSize:10, color:'#333', fontFamily:'IBM Plex Mono' }}>EXPENSE: <span style={{ color:'#ff4d4d' }}>{fmt(currentMonth.expense)}</span></div>
+          </div>
+        </Card>
+      </div>
+
+      <Card>
+        <SectionLabel>Budget vs. Spent</SectionLabel>
+        <div className="grid-budget-vs-spent">
+          {catSpend.map(b=><ProgressBar key={b.category} label={b.category} spent={b.spent} limit={b.limit} color={b.color} />)}
+        </div>
+      </Card>
+
+      <Card>
+        <SectionLabel>Recent Activity</SectionLabel>
+        <div style={{ display:'flex', flexDirection:'column', gap:1 }}>
+          {transactions.slice(0,5).map(t=><TransactionRow key={t.id} t={t} />)}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function TransactionsView({ transactions, setTransactions, budgets }) {
+  const [filter, setFilter] = useState('all');
+  const [showAdd, setShowAdd] = useState(false);
+  const today = new Date().toISOString().slice(0,10);
+  const defaultCat = budgets[0]?.category || 'Other';
+  const [form, setForm] = useState({ type:'expense', category:defaultCat, desc:'', amount:'', date:today, recur:null });
+  // If user toggles income/expense, snap category to a valid one for that type
+  useEffect(() => {
+    const opts = categoryOptionsFor(form.type, budgets);
+    if (!opts.includes(form.category)) setForm(f => ({ ...f, category: opts[0] }));
+  }, [form.type, budgets]);
+  const categoryOptions = categoryOptionsFor(form.type, budgets);
+  const filtered = transactions.filter(t=>filter==='all'||t.type===filter);
+  const addTx = () => {
+    if (!form.desc||!form.amount) return;
+    setTransactions(p=>[{ ...form, id:Date.now(), amount:parseFloat(form.amount) }, ...p]);
+    setForm({ type:'expense', category:defaultCat, desc:'', amount:'', date:today, recur:null });
+    setShowAdd(false);
+  };
+  const inp = { background:'#0a0a0a', border:'1px solid #252525', color:'#ccc', padding:'8px 10px', fontSize:12, borderRadius:1, fontFamily:'IBM Plex Mono', width:'100%', outline:'none' };
+  const btn = (active) => ({ background: active ? '#e8e8e8' : 'transparent', border:`1px solid ${active ? '#e8e8e8' : '#222'}`, color: active ? '#000' : '#555', padding:'5px 14px', fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', fontFamily:'IBM Plex Mono', cursor:'pointer', borderRadius:1, fontWeight:700 });
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <div style={{ display:'flex', gap:2 }}>
+          {['all','income','expense'].map(f=><button key={f} onClick={()=>setFilter(f)} style={btn(filter===f)}>{f}</button>)}
+        </div>
+        <button onClick={()=>setShowAdd(!showAdd)} style={{ background: showAdd ? '#1a1a1a' : '#e8e8e8', border:'1px solid #e8e8e8', color: showAdd ? '#e8e8e8' : '#000', padding:'6px 16px', fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', fontFamily:'IBM Plex Mono', cursor:'pointer', borderRadius:1, fontWeight:700 }}>+ ADD</button>
+      </div>
+
+      {showAdd && (
+        <Card style={{ borderColor:'#2a2a2a' }}>
+          <SectionLabel>New Transaction</SectionLabel>
+          <div className="grid-form-3" style={{ marginBottom:12 }}>
+            <div><div style={{ fontSize:9, color:'#444', fontFamily:'IBM Plex Mono', marginBottom:5, letterSpacing:'0.1em' }}>TYPE</div>
+              <select value={form.type} onChange={e=>setForm({...form,type:e.target.value})} style={inp}><option value="expense">Expense</option><option value="income">Income</option></select></div>
+            <div><div style={{ fontSize:9, color:'#444', fontFamily:'IBM Plex Mono', marginBottom:5, letterSpacing:'0.1em' }}>{form.type==='expense' ? 'BUDGET GOAL' : 'CATEGORY'}</div>
+              <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})} style={inp}>{categoryOptions.map(c=><option key={c}>{c}</option>)}</select></div>
+            <div><div style={{ fontSize:9, color:'#444', fontFamily:'IBM Plex Mono', marginBottom:5, letterSpacing:'0.1em' }}>AMOUNT ($)</div>
+              <input type="number" placeholder="0.00" value={form.amount} onChange={e=>setForm({...form,amount:e.target.value})} style={inp} /></div>
+            <div style={{ gridColumn:'1/-1' }}><div style={{ fontSize:9, color:'#444', fontFamily:'IBM Plex Mono', marginBottom:5, letterSpacing:'0.1em' }}>DESCRIPTION</div>
+              <input placeholder="Description..." value={form.desc} onChange={e=>setForm({...form,desc:e.target.value})} style={inp} /></div>
+            <div><div style={{ fontSize:9, color:'#444', fontFamily:'IBM Plex Mono', marginBottom:5, letterSpacing:'0.1em' }}>DATE</div>
+              <input type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})} style={inp} /></div>
+            <div style={{ display:'flex', alignItems:'flex-end' }}>
+              <label style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer' }}>
+                <div onClick={()=>setForm({...form,recur:form.recur?null:'monthly'})} style={{ width:14, height:14, border:`1px solid ${form.recur ? '#e8e8e8' : '#333'}`, background: form.recur ? '#e8e8e8' : 'transparent', borderRadius:1, flexShrink:0 }} />
+                <span style={{ fontSize:11, color:'#555', fontFamily:'IBM Plex Mono' }}>RECURRING</span>
+              </label>
+            </div>
+            <div style={{ gridColumn:'1/-1', display:'flex', justifyContent:'flex-end', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+              <button onClick={()=>setShowAdd(false)} style={{ background:'none', border:'1px solid #222', color:'#444', padding:'7px 14px', fontSize:10, fontFamily:'IBM Plex Mono', cursor:'pointer', borderRadius:1 }}>CANCEL</button>
+              <button onClick={addTx} style={{ background:'#e8e8e8', border:'none', color:'#000', padding:'7px 20px', fontSize:10, fontFamily:'IBM Plex Mono', cursor:'pointer', borderRadius:1, fontWeight:700 }}>CONFIRM</button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      <Card style={{ padding:0 }}>
+        <div className="tx-list-header" style={{ display:'flex', padding:'8px 16px', borderBottom:'1px solid #141414' }}>
+          <div style={{ flex:1, fontSize:9, color:'#333', fontFamily:'IBM Plex Mono', letterSpacing:'0.1em' }}>DESCRIPTION</div>
+          <div style={{ width:100, fontSize:9, color:'#333', fontFamily:'IBM Plex Mono' }}>CATEGORY</div>
+          <div style={{ width:80, fontSize:9, color:'#333', fontFamily:'IBM Plex Mono' }}>DATE</div>
+          <div style={{ width:100, fontSize:9, color:'#333', fontFamily:'IBM Plex Mono', textAlign:'right' }}>AMOUNT</div>
+        </div>
+        <div style={{ maxHeight:460, overflowY:'auto' }}>
+          {filtered.map(t=><TransactionRow key={t.id} t={t} onDelete={id=>setTransactions(p=>p.filter(x=>x.id!==id))} />)}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// Fast color picker — CSS conic-gradient (one paint, GPU-rasterized) + rAF-throttled
+// pointer events. The wheel image is rendered once per lightness change, NOT per drag move.
+function ColorWheel({ value, onChange }) {
+  const wheelRef = useRef(null);
+  const satRef   = useRef(null);
+  const litRef   = useRef(null);
+  const SIZE = 160, R = SIZE / 2, INNER = R * 0.40;
+
+  const hexToHsl = (hex) => {
+    let r=parseInt(hex.slice(1,3),16)/255, g=parseInt(hex.slice(3,5),16)/255, b=parseInt(hex.slice(5,7),16)/255;
+    const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
+    let h=0, s=0, l=(max+min)/2;
+    if(d>0){ s=d/(1-Math.abs(2*l-1)); h=max===r?((g-b)/d)%6:max===g?(b-r)/d+2:(r-g)/d+4; h=((h*60)+360)%360; }
+    return [h, s*100, l*100];
+  };
+  const hslToHex = (h,s,l) => {
+    s/=100; l/=100;
+    const a=s*Math.min(l,1-l);
+    const f=n=>{ const k=(n+h/30)%12; const c=l-a*Math.max(-1,Math.min(k-3,9-k,1)); return Math.round(255*c).toString(16).padStart(2,'0'); };
+    return `#${f(0)}${f(8)}${f(4)}`;
+  };
+
+  const [hsl, setHsl] = useState(()=> hexToHsl(value || '#1a5fd4'));
+  const [h, s, l] = hsl;
+
+  // Sync from external value changes (e.g., user clicks a different swatch)
+  useEffect(()=>{ if(value) setHsl(hexToHsl(value)); }, [value]);
+
+  // rAF-throttled emit — multiple pointer moves coalesce into one render per frame
+  const rafRef = useRef(null);
+  const pendingRef = useRef(hsl);
+  const emit = (nh, ns, nl) => {
+    pendingRef.current = [nh, ns, nl];
+    if (rafRef.current) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      const [ph, ps, pl] = pendingRef.current;
+      setHsl([ph, ps, pl]);
+      onChange(hslToHex(ph, ps, pl));
+    });
+  };
+  useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, []);
+
+  // Generic pointer-drag attacher: works for mouse + touch + pen via pointer events
+  const attachDrag = (handler) => (e) => {
+    e.preventDefault();
+    const target = e.currentTarget;
+    target.setPointerCapture && target.setPointerCapture(e.pointerId);
+    handler(e, target);
+    const move = (ev) => handler(ev, target);
+    const up = (ev) => {
+      target.removeEventListener('pointermove', move);
+      target.removeEventListener('pointerup', up);
+      target.removeEventListener('pointercancel', up);
+      try { target.releasePointerCapture(ev.pointerId); } catch {}
+    };
+    target.addEventListener('pointermove', move);
+    target.addEventListener('pointerup', up);
+    target.addEventListener('pointercancel', up);
+  };
+
+  const onWheelMove = (e, el) => {
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+    const dx = e.clientX - cx, dy = e.clientY - cy;
+    const angle = ((Math.atan2(dy, dx) * 180 / Math.PI) + 360) % 360;
+    emit(angle, s, l);
+  };
+  const onSatMove = (e, el) => {
+    const r = el.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+    emit(h, pct * 100, l);
+  };
+  const onLitMove = (e, el) => {
+    const r = el.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+    emit(h, s, 10 + pct * 75);
+  };
+
+  // Wheel ring uses CSS conic-gradient — drawn once by the GPU per lightness value.
+  // Saturation 100% on the ring; the actual chosen saturation is shown in the preview.
+  const wheelStops = Array.from({length:13}, (_,i)=> {
+    const deg = i * 30;
+    return `hsl(${deg},100%,${l}%) ${(i/12*100).toFixed(2)}%`;
+  }).join(', ');
+  const wheelBg = `conic-gradient(from 0deg, ${wheelStops})`;
+
+  // Thumb position on the ring
+  const tr = (R + INNER) / 2;
+  const ta = h * Math.PI / 180;
+  const thumbX = R + Math.cos(ta) * tr;
+  const thumbY = R + Math.sin(ta) * tr;
+  const preview = hslToHex(h, s, l);
+  const satGrad = `linear-gradient(to right, hsl(${h},0%,${l}%), hsl(${h},100%,${l}%))`;
+  const litGrad = `linear-gradient(to right, hsl(${h},${s}%,10%), hsl(${h},${s}%,55%), hsl(${h},${s}%,85%))`;
+
+  return (
+    <div className="color-wheel" style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10, userSelect:'none', touchAction:'none' }}>
+      {/* Wheel: pure CSS, no canvas redraws on drag */}
+      <div ref={wheelRef}
+        onPointerDown={attachDrag(onWheelMove)}
+        style={{ position:'relative', width:SIZE, height:SIZE, borderRadius:'50%', background: wheelBg, cursor:'crosshair', touchAction:'none' }}>
+        {/* Center cutout to make a ring */}
+        <div style={{ position:'absolute', left:R-INNER, top:R-INNER, width:INNER*2, height:INNER*2, borderRadius:'50%', background:'#0f0f0f', boxShadow:'0 0 0 6px #0f0f0f' }} />
+        {/* Thumb */}
+        <div style={{ position:'absolute', left:thumbX-8, top:thumbY-8, width:16, height:16, borderRadius:'50%', background:preview, border:'2px solid #fff', boxShadow:'0 1px 4px rgba(0,0,0,0.5)', pointerEvents:'none' }} />
+      </div>
+
+      {/* Saturation slider */}
+      <div style={{ width:SIZE, display:'flex', flexDirection:'column', gap:4 }}>
+        <div style={{ fontSize:8, color:'#444', fontFamily:'IBM Plex Mono', letterSpacing:'0.1em' }}>SATURATION</div>
+        <div ref={satRef} onPointerDown={attachDrag(onSatMove)}
+          style={{ height:14, borderRadius:1, background:satGrad, cursor:'ew-resize', position:'relative', touchAction:'none' }}>
+          <div style={{ position:'absolute', top:'50%', left:`${s}%`, transform:'translate(-50%,-50%)', width:14, height:14, borderRadius:'50%', background:preview, border:'2px solid #fff', pointerEvents:'none' }} />
+        </div>
+      </div>
+
+      {/* Lightness slider */}
+      <div style={{ width:SIZE, display:'flex', flexDirection:'column', gap:4 }}>
+        <div style={{ fontSize:8, color:'#444', fontFamily:'IBM Plex Mono', letterSpacing:'0.1em' }}>LIGHTNESS</div>
+        <div ref={litRef} onPointerDown={attachDrag(onLitMove)}
+          style={{ height:14, borderRadius:1, background:litGrad, cursor:'ew-resize', position:'relative', touchAction:'none' }}>
+          <div style={{ position:'absolute', top:'50%', left:`${(l-10)/75*100}%`, transform:'translate(-50%,-50%)', width:14, height:14, borderRadius:'50%', background:preview, border:'2px solid #fff', pointerEvents:'none' }} />
+        </div>
+      </div>
+
+      <div style={{ display:'flex', alignItems:'center', gap:8, width:SIZE }}>
+        <div style={{ width:28, height:28, background:preview, borderRadius:1, border:'1px solid #333', flexShrink:0 }} />
+        <div style={{ fontFamily:'IBM Plex Mono', fontSize:12, color:'#888', letterSpacing:'0.06em' }}>{preview.toUpperCase()}</div>
+      </div>
+    </div>
+  );
+}
+
+function BudgetGoalsView({ transactions, budgets, setBudgets }) {
+  const [editing, setEditing] = useState(null);
+  const [editVal, setEditVal] = useState('');
+  const [showAdd, setShowAdd] = useState(false);
+  const [newCat, setNewCat] = useState({ category:'', limit:'', color: '#1a5fd4' });
+  const [fullEdit, setFullEdit] = useState(null);
+  const [fullEditForm, setFullEditForm] = useState({ category:'', limit:'', color:'' });
+  // Inline "+ ADD" state — which card is currently typing in an addition, and the typed value
+  const [addingTo, setAddingTo] = useState(null);   // category currently in add mode
+  const [addAmt, setAddAmt] = useState('');
+
+  const catSpend = budgets.map(b=>({
+    ...b,
+    autoSpent: transactions.filter(t=>t.type==='expense'&&t.category===b.category).reduce((s,t)=>s+t.amount,0),
+    manualSpent: Number(b.manualSpent) || 0,
+    spent: computeSpent(b, transactions)
+  }));
+
+  const startAdd = (cat) => { setAddingTo(cat); setAddAmt(''); };
+  const cancelAdd = () => { setAddingTo(null); setAddAmt(''); };
+  const confirmAdd = () => {
+    const v = parseFloat(addAmt);
+    if (!isNaN(v) && v !== 0) {
+      setBudgets(p => p.map(b => b.category === addingTo
+        ? { ...b, manualSpent: (Number(b.manualSpent)||0) + v }
+        : b
+      ));
+    }
+    cancelAdd();
+  };
+  const resetManual = (cat) => setBudgets(p => p.map(b => b.category===cat ? {...b, manualSpent: 0} : b));
+
+  const startLimitEdit = (cat, lim) => { setEditing(cat); setEditVal(String(lim)); };
+  const confirmLimitEdit = () => {
+    const v = parseFloat(editVal);
+    if (!isNaN(v) && v > 0) setBudgets(p => p.map(b => b.category===editing ? {...b, limit:v} : b));
+    setEditing(null);
+  };
+
+  const addBudget = () => {
+    if (!newCat.category || !newCat.limit) return;
+    const v = parseFloat(newCat.limit);
+    if (isNaN(v) || v <= 0) return;
+    setBudgets(p => [...p, { category: newCat.category, limit: v, color: newCat.color, manualSpent: 0 }]);
+    setNewCat({ category:'', limit:'', color: '#1a5fd4' });
+    setShowAdd(false);
+  };
+
+  const deleteBudget = (cat) => { setBudgets(p => p.filter(b => b.category !== cat)); setFullEdit(null); };
+
+  const startFullEdit = (b) => { setFullEdit(b.category); setFullEditForm({ category: b.category, limit: String(b.limit), color: b.color }); };
+  const confirmFullEdit = () => {
+    const v = parseFloat(fullEditForm.limit);
+    setBudgets(p => p.map(b => b.category === fullEdit
+      ? { ...b, category: fullEditForm.category || b.category, limit: isNaN(v) ? b.limit : v, color: fullEditForm.color }
+      : b
+    ));
+    setFullEdit(null);
+  };
+
+  const inp = { background:'#0a0a0a', border:'1px solid #252525', color:'#ccc', padding:'7px 10px', fontSize:12, borderRadius:1, fontFamily:'IBM Plex Mono', outline:'none' };
+  const totalBudget = budgets.reduce((s,b)=>s+b.limit,0);
+  const totalSpent  = catSpend.reduce((s,b)=>s+b.spent,0);
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+      <div className="grid-3">
+        <Card><Stat label="Total Budgeted" value={fmt(totalBudget)} customColor="var(--accent)" /></Card>
+        <Card><Stat label="Total Spent"    value={fmt(totalSpent)}  danger={totalSpent>totalBudget} customColor={totalSpent<=totalBudget ? '#4d8fcc' : undefined} /></Card>
+        <Card><Stat label="Budget Items"   value={String(budgets.length)} customColor="#555" /></Card>
+      </div>
+
+      {showAdd && (
+        <Card style={{ borderColor:'#2a2a2a' }}>
+          <SectionLabel>New Budget Category</SectionLabel>
+          <div className="grid-add-budget">
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              <div>
+                <div style={{ fontSize:9, color:'#444', fontFamily:'IBM Plex Mono', marginBottom:5, letterSpacing:'0.1em' }}>CATEGORY NAME</div>
+                <input placeholder="e.g. Travel" value={newCat.category} onChange={e=>setNewCat({...newCat,category:e.target.value})} style={{ ...inp, width:'100%' }} />
+              </div>
+              <div>
+                <div style={{ fontSize:9, color:'#444', fontFamily:'IBM Plex Mono', marginBottom:5, letterSpacing:'0.1em' }}>MONTHLY LIMIT ($)</div>
+                <input type="number" placeholder="0" value={newCat.limit} onChange={e=>setNewCat({...newCat,limit:e.target.value})} style={{ ...inp, width:'100%' }} />
+              </div>
+              <div style={{ display:'flex', gap:6, marginTop:4 }}>
+                <button onClick={()=>setShowAdd(false)} style={{ flex:1, background:'none', border:'1px solid #222', color:'#444', padding:'7px 12px', fontSize:10, fontFamily:'IBM Plex Mono', cursor:'pointer', borderRadius:1 }}>CANCEL</button>
+                <button onClick={addBudget} style={{ flex:1, background:'#e8e8e8', border:'none', color:'#000', padding:'7px 18px', fontSize:10, fontFamily:'IBM Plex Mono', cursor:'pointer', fontWeight:700, borderRadius:1 }}>ADD</button>
+              </div>
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+              <div style={{ fontSize:9, color:'#444', fontFamily:'IBM Plex Mono', marginBottom:1, letterSpacing:'0.1em' }}>COLOR</div>
+              <ColorWheel value={newCat.color} onChange={c=>setNewCat({...newCat,color:c})} />
+            </div>
+          </div>
+        </Card>
+      )}
+
+      <div className="grid-cards">
+        {catSpend.map(b=>{
+          const pct=Math.min(b.spent/b.limit,1), over=b.spent>b.limit;
+          const barColor=over?'#ff4d4d':pct>0.8?'#fb923c':b.color;
+          const isLimEd=editing===b.category;
+          const isFullEd=fullEdit===b.category;
+          const editInp={ background:'#0a0a0a', border:'1px solid #444', color:'#ccc', padding:'4px 8px', fontSize:13, borderRadius:1, fontFamily:'IBM Plex Mono', width:'90px', outline:'none', textAlign:'right' };
+
+          return (
+            <Card key={b.category} style={{ borderColor: over ? '#ff4d4d22' : isFullEd ? '#2a2a2a' : '#1e1e1e', position:'relative', overflow:'hidden' }}>
+              {!isFullEd && <div style={{ position:'absolute', top:0, left:0, width:`${pct*100}%`, height:'100%', background:`${b.color}0d`, pointerEvents:'none' }} />}
+
+              {isFullEd ? (
+                <div style={{ position:'relative', display:'flex', flexDirection:'column', gap:8 }}>
+                  <SectionLabel>Edit Category</SectionLabel>
+                  <div>
+                    <div style={{ fontSize:9, color:'#444', fontFamily:'IBM Plex Mono', marginBottom:4, letterSpacing:'0.1em' }}>NAME</div>
+                    <input value={fullEditForm.category} onChange={e=>setFullEditForm({...fullEditForm,category:e.target.value})} style={{ ...inp, width:'100%' }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize:9, color:'#444', fontFamily:'IBM Plex Mono', marginBottom:4, letterSpacing:'0.1em' }}>MONTHLY LIMIT ($)</div>
+                    <input type="number" value={fullEditForm.limit} onChange={e=>setFullEditForm({...fullEditForm,limit:e.target.value})} style={{ ...inp, width:'100%' }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize:9, color:'#444', fontFamily:'IBM Plex Mono', marginBottom:6, letterSpacing:'0.1em' }}>COLOR</div>
+                    <ColorWheel value={fullEditForm.color} onChange={c=>setFullEditForm({...fullEditForm,color:c})} />
+                  </div>
+                  <div style={{ display:'flex', gap:6, marginTop:4 }}>
+                    <button onClick={()=>deleteBudget(b.category)} style={{ background:'none', border:'1px solid #552222', color:'#aa4444', padding:'5px 10px', fontSize:9, fontFamily:'IBM Plex Mono', cursor:'pointer', borderRadius:1 }}>DELETE</button>
+                    <button onClick={()=>setFullEdit(null)} style={{ flex:1, background:'none', border:'1px solid #222', color:'#444', padding:'5px', fontSize:9, fontFamily:'IBM Plex Mono', cursor:'pointer', borderRadius:1 }}>CANCEL</button>
+                    <button onClick={confirmFullEdit} style={{ flex:1, background:'#e8e8e8', border:'none', color:'#000', padding:'5px', fontSize:9, fontFamily:'IBM Plex Mono', cursor:'pointer', fontWeight:700, borderRadius:1 }}>SAVE</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ position:'relative' }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12 }}>
+                    <div>
+                      <div style={{ fontSize:11, color:'#555', letterSpacing:'0.08em', marginBottom:4, display:'flex', alignItems:'center', gap:6 }}>
+                        <div style={{ width:5, height:5, background:b.color, flexShrink:0 }} />
+                        {b.category.toUpperCase()}
+                      </div>
+                      <div style={{ fontFamily:'IBM Plex Mono', fontSize:22, fontWeight:700, color: over ? '#ff4d4d' : b.color }}>{fmt(b.spent)}</div>
+                    </div>
+                    <div style={{ textAlign:'right' }}>
+                      <div style={{ fontSize:9, color:'#333', fontFamily:'IBM Plex Mono', marginBottom:4 }}>LIMIT</div>
+                      {isLimEd ? (
+                        <div style={{ display:'flex', flexDirection:'column', gap:4, alignItems:'flex-end' }}>
+                          <input autoFocus value={editVal} onChange={e=>setEditVal(e.target.value)}
+                            onKeyDown={e=>{ if(e.key==='Enter') confirmLimitEdit(); if(e.key==='Escape') setEditing(null); }} style={editInp} />
+                          <div style={{ display:'flex', gap:4 }}>
+                            <button onClick={()=>setEditing(null)} style={{ background:'none', border:'1px solid #222', color:'#444', padding:'2px 8px', fontSize:9, fontFamily:'IBM Plex Mono', cursor:'pointer', borderRadius:1 }}>✕</button>
+                            <button onClick={confirmLimitEdit} style={{ background:'#e8e8e8', border:'none', color:'#000', padding:'2px 8px', fontSize:9, fontFamily:'IBM Plex Mono', cursor:'pointer', fontWeight:700, borderRadius:1 }}>✓</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                          <div style={{ fontFamily:'IBM Plex Mono', fontSize:14, color:'#444' }}>{fmt(b.limit)}</div>
+                          <button onClick={()=>startLimitEdit(b.category,b.limit)} style={{ background:'none', border:'1px solid #222', color:'#333', padding:'2px 6px', fontSize:9, cursor:'pointer', borderRadius:1, fontFamily:'IBM Plex Mono', lineHeight:1.4 }}>EDIT</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ height:4, background:'#1a1a1a', borderRadius:1, marginBottom:8 }}>
+                    <div style={{ height:'100%', width:`${pct*100}%`, background:barColor, borderRadius:1, transition:'width 0.6s' }} />
+                  </div>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:6 }}>
+                    <div style={{ fontSize:10, fontFamily:'IBM Plex Mono', color: over ? '#ff4d4d' : '#444' }}>
+                      {over ? `▲ OVER BY ${fmt(b.spent-b.limit)}` : `${fmt(b.limit-b.spent)} remaining`}
+                    </div>
+                    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                      <div style={{ fontSize:10, fontFamily:'IBM Plex Mono', color: barColor }}>{(pct*100).toFixed(0)}%</div>
+                      <button onClick={()=>startFullEdit(b)} style={{ background:'none', border:`1px solid ${b.color}44`, color:b.color, padding:'2px 7px', fontSize:9, cursor:'pointer', borderRadius:1, fontFamily:'IBM Plex Mono' }}>···</button>
+                    </div>
+                  </div>
+
+                  {/* + ADD spent: inline form on the same card */}
+                  <div style={{ marginTop:8, paddingTop:8, borderTop:'1px dashed #1a1a1a' }}>
+                    {addingTo === b.category ? (
+                      <div style={{ display:'flex', gap:4, alignItems:'center' }}>
+                        <span style={{ fontSize:11, color:'#666', fontFamily:'IBM Plex Mono' }}>+ $</span>
+                        <input autoFocus type="number" inputMode="decimal" value={addAmt} onChange={e=>setAddAmt(e.target.value)}
+                          onKeyDown={e=>{ if(e.key==='Enter') confirmAdd(); if(e.key==='Escape') cancelAdd(); }}
+                          placeholder="0.00"
+                          style={{ flex:1, background:'#0a0a0a', border:'1px solid #333', color:'#ccc', padding:'4px 8px', fontSize:12, borderRadius:1, fontFamily:'IBM Plex Mono', outline:'none', minWidth:0 }} />
+                        <button onClick={cancelAdd} style={{ background:'none', border:'1px solid #222', color:'#444', padding:'3px 8px', fontSize:10, fontFamily:'IBM Plex Mono', cursor:'pointer', borderRadius:1 }}>✕</button>
+                        <button onClick={confirmAdd} style={{ background:'#e8e8e8', border:'none', color:'#000', padding:'3px 10px', fontSize:10, fontFamily:'IBM Plex Mono', cursor:'pointer', borderRadius:1, fontWeight:700 }}>ADD</button>
+                      </div>
+                    ) : (
+                      <button onClick={()=>startAdd(b.category)} style={{ width:'100%', background:'transparent', border:`1px dashed ${b.color}55`, color:b.color, padding:'5px', fontSize:10, fontFamily:'IBM Plex Mono', cursor:'pointer', borderRadius:1, letterSpacing:'0.08em' }}>+ ADD SPENT</button>
+                    )}
+                    {b.manualSpent !== 0 && (
+                      <div style={{ marginTop:6, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                        <div style={{ fontSize:9, color:'#444', fontFamily:'IBM Plex Mono', letterSpacing:'0.06em' }}>
+                          AUTO {fmt(b.autoSpent)} · MANUAL {b.manualSpent>0?'+':''}{fmt(b.manualSpent)}
+                        </div>
+                        <button onClick={()=>resetManual(b.category)} style={{ background:'none', border:'none', color:'#666', fontSize:9, cursor:'pointer', fontFamily:'IBM Plex Mono', textDecoration:'underline' }}>clear</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </Card>
+          );
+        })}
+
+        {!showAdd && (
+          <button onClick={()=>setShowAdd(true)} style={{ background:'transparent', border:'1px dashed #222', color:'#333', fontSize:10, fontFamily:'IBM Plex Mono', cursor:'pointer', letterSpacing:'0.12em', borderRadius:1, minHeight:120, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+            <span style={{ fontSize:16, color:'#2a2a2a' }}>+</span> NEW CATEGORY
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SavingsView({ goals, setGoals }) {
+  const [adding, setAdding] = useState(false);
+  const [newGoal, setNewGoal] = useState({ name:'', target:'', saved:'' });
+  const [editing, setEditing] = useState(null);
+  const [editForm, setEditForm] = useState({ name:'', target:'', saved:'' });
+
+  const totalSaved=goals.reduce((s,g)=>s+g.saved,0), totalTarget=goals.reduce((s,g)=>s+g.target,0);
+  const inp={ background:'#0a0a0a', border:'1px solid #252525', color:'#ccc', padding:'8px 10px', fontSize:12, borderRadius:1, fontFamily:'IBM Plex Mono', width:'100%', outline:'none' };
+
+  const GOAL_COLORS = ['#1a5fd4','#00a85a','#c4973a','#b8387a','#d42525','#7c5ce8','#29b8d4'];
+  const addGoal=()=>{ if(!newGoal.name||!newGoal.target) return; setGoals(p=>[...p,{id:Date.now(),name:newGoal.name,target:parseFloat(newGoal.target),saved:parseFloat(newGoal.saved)||0,color:GOAL_COLORS[p.length%GOAL_COLORS.length]}]); setNewGoal({name:'',target:'',saved:''}); setAdding(false); };
+  const startEdit=g=>{ setEditing(g.id); setEditForm({name:g.name,target:String(g.target),saved:String(g.saved)}); };
+  const confirmEdit=()=>{ setGoals(p=>p.map(g=>g.id===editing?{...g,name:editForm.name||g.name,target:parseFloat(editForm.target)||g.target,saved:parseFloat(editForm.saved)||g.saved}:g)); setEditing(null); };
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+      <div className="grid-3">
+        <Card><Stat label="Total Saved"      value={fmt(totalSaved)} income /></Card>
+        <Card><Stat label="Total Target"     value={fmt(totalTarget)} customColor="var(--accent)" /></Card>
+        <Card><Stat label="Overall Progress" value={totalTarget>0?`${((totalSaved/totalTarget)*100).toFixed(1)}%`:'0%'} customColor="#29b8d4" /></Card>
+      </div>
+
+      <Card>
+        <SectionLabel>Portfolio Progress</SectionLabel>
+        <div style={{ height:6, background:'#111', borderRadius:1, marginBottom:8, overflow:'hidden' }}>
+          <div style={{ height:'100%', width:`${totalTarget>0?(totalSaved/totalTarget)*100:0}%`, background:'linear-gradient(90deg,#1a5fd4,#00c46a)', borderRadius:1, transition:'width 0.6s' }} />
+        </div>
+        <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, fontFamily:'IBM Plex Mono' }}>
+          <span style={{ color:'#00c46a' }}>{fmt(totalSaved)} saved</span><span style={{ color:'#444' }}>{fmt(totalTarget-totalSaved)} to go</span>
+        </div>
+      </Card>
+
+      <div className="grid-2">
+        {goals.map(g=>{
+          const pct=Math.min(g.saved/g.target,1), isEd=editing===g.id;
+          return (
+            <Card key={g.id} style={{ position:'relative', overflow:'hidden', borderColor: isEd ? '#2a2a2a' : '#1e1e1e' }}>
+              {!isEd && <div style={{ position:'absolute', top:0, left:0, width:`${pct*100}%`, height:'100%', background:`${g.color}0d` }} />}
+              <div style={{ position:'relative' }}>
+                {isEd ? (
+                  <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                    <SectionLabel>Edit Goal</SectionLabel>
+                    <input placeholder="Goal name"    value={editForm.name}   onChange={e=>setEditForm({...editForm,name:e.target.value})}   style={inp} />
+                    <input type="number" placeholder="Target"       value={editForm.target} onChange={e=>setEditForm({...editForm,target:e.target.value})} style={inp} />
+                    <input type="number" placeholder="Saved so far" value={editForm.saved}  onChange={e=>setEditForm({...editForm,saved:e.target.value})}  style={inp} />
+                    <div style={{ display:'flex', gap:6 }}>
+                      <button onClick={()=>{ setGoals(p=>p.filter(x=>x.id!==editing)); setEditing(null); }} style={{ background:'none', border:'1px solid #552222', color:'#aa4444', padding:'6px 10px', fontSize:9, fontFamily:'IBM Plex Mono', cursor:'pointer', borderRadius:1 }}>DELETE</button>
+                      <button onClick={()=>setEditing(null)} style={{ flex:1, background:'none', border:'1px solid #222', color:'#444', padding:'6px', fontSize:9, fontFamily:'IBM Plex Mono', cursor:'pointer', borderRadius:1 }}>CANCEL</button>
+                      <button onClick={confirmEdit} style={{ flex:1, background:'#e8e8e8', border:'none', color:'#000', padding:'6px', fontSize:9, fontFamily:'IBM Plex Mono', cursor:'pointer', fontWeight:700, borderRadius:1 }}>SAVE</button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display:'flex', justifyContent:'space-between', marginBottom:12 }}>
+                      <div>
+                        <div style={{ fontSize:11, color:'#555', letterSpacing:'0.08em', marginBottom:4, textTransform:'uppercase', display:'flex', alignItems:'center', gap:6 }}>
+                          <div style={{ width:6, height:6, background:g.color, borderRadius:0, flexShrink:0 }} />
+                          {g.name}
+                        </div>
+                        <div style={{ fontFamily:'IBM Plex Mono', fontSize:26, fontWeight:700, color: g.color }}>{fmt(g.saved)}</div>
+                      </div>
+                      <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:4 }}>
+                        <button onClick={()=>startEdit(g)} style={{ background:'none', border:`1px solid ${g.color}44`, color:g.color, padding:'3px 8px', fontSize:9, cursor:'pointer', borderRadius:1, fontFamily:'IBM Plex Mono' }}>EDIT</button>
+                        <div style={{ fontSize:9, color:'#333', fontFamily:'IBM Plex Mono' }}>TARGET</div>
+                        <div style={{ fontFamily:'IBM Plex Mono', fontSize:14, color:'#555' }}>{fmt(g.target)}</div>
+                        <div style={{ fontFamily:'IBM Plex Mono', fontSize:11, color: g.color, opacity:0.7 }}>{(pct*100).toFixed(1)}%</div>
+                      </div>
+                    </div>
+                    <div style={{ height:4, background:'#141414', borderRadius:1, marginBottom:8 }}>
+                      <div style={{ height:'100%', width:`${pct*100}%`, background:g.color, borderRadius:1, transition:'width 0.6s' }} />
+                    </div>
+                    <div style={{ fontSize:10, fontFamily:'IBM Plex Mono', color:'#444' }}>{fmt(g.target-g.saved)} remaining</div>
+                  </>
+                )}
+              </div>
+            </Card>
+          );
+        })}
+        {adding && (
+          <Card style={{ borderColor:'#2a2a2a' }}>
+            <SectionLabel>New Goal</SectionLabel>
+            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+              <input placeholder="Goal name"    value={newGoal.name}   onChange={e=>setNewGoal({...newGoal,name:e.target.value})}   style={inp} />
+              <input type="number" placeholder="Target amount" value={newGoal.target} onChange={e=>setNewGoal({...newGoal,target:e.target.value})} style={inp} />
+              <input type="number" placeholder="Already saved" value={newGoal.saved}  onChange={e=>setNewGoal({...newGoal,saved:e.target.value})}  style={inp} />
+              <div style={{ display:'flex', gap:8, marginTop:4 }}>
+                <button onClick={()=>setAdding(false)} style={{ flex:1, background:'none', border:'1px solid #222', color:'#444', padding:'7px', fontSize:10, fontFamily:'IBM Plex Mono', cursor:'pointer', borderRadius:1 }}>CANCEL</button>
+                <button onClick={addGoal} style={{ flex:1, background:'#e8e8e8', border:'none', color:'#000', padding:'7px', fontSize:10, fontFamily:'IBM Plex Mono', cursor:'pointer', fontWeight:700, borderRadius:1 }}>ADD</button>
+              </div>
+            </div>
+          </Card>
+        )}
+      </div>
+      {!adding && <button onClick={()=>setAdding(true)} style={{ background:'transparent', border:'1px dashed #222', color:'#333', padding:'14px', fontSize:10, fontFamily:'IBM Plex Mono', cursor:'pointer', letterSpacing:'0.12em', borderRadius:1 }}>+ NEW SAVINGS GOAL</button>}
+    </div>
+  );
+}
+
+function RecurringView({ transactions, setTransactions, budgets }) {
+  const [subTab, setSubTab] = useState('monthly');
+  const [editing, setEditing] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [showAdd, setShowAdd] = useState(false);
+  const today = new Date().toISOString().slice(0,10);
+  const defaultCat = budgets[0]?.category || 'Other';
+  const [addForm, setAddForm] = useState({ type:'expense', category:defaultCat, desc:'', amount:'', date:today });
+  useEffect(() => {
+    const opts = categoryOptionsFor(addForm.type, budgets);
+    if (!opts.includes(addForm.category)) setAddForm(f => ({ ...f, category: opts[0] }));
+  }, [addForm.type, budgets]);
+  const addCategoryOptions = categoryOptionsFor(addForm.type, budgets);
+  // For inline edit row, we don't know the type, so show all possible categories
+  const editCategoryOptions = [...new Set([...budgets.map(b=>b.category), ...INCOME_CATEGORIES])];
+
+  const monthly = transactions.filter(t=>t.recur==='monthly');
+  const yearly  = transactions.filter(t=>t.recur==='yearly');
+  const list    = subTab==='monthly' ? monthly : yearly;
+
+  const totalIn  = monthly.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const totalOut = monthly.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const yearlyTotal = yearly.reduce((s,t)=>s+t.amount,0);
+
+  const inp={ background:'#0a0a0a', border:'1px solid #252525', color:'#ccc', padding:'6px 8px', fontSize:12, borderRadius:1, fontFamily:'IBM Plex Mono', outline:'none' };
+
+  const startEdit=t=>{ setEditing(t.id); setEditForm({desc:t.desc,amount:String(t.amount),category:t.category}); };
+  const confirmEdit=()=>{ setTransactions(p=>p.map(t=>t.id===editing?{...t,desc:editForm.desc||t.desc,amount:parseFloat(editForm.amount)||t.amount,category:editForm.category||t.category}:t)); setEditing(null); };
+  const removeRec=id=>{ setTransactions(p=>p.map(t=>t.id===id?{...t,recur:null}:t)); setEditing(null); };
+  const addNew=()=>{ if(!addForm.desc||!addForm.amount) return; setTransactions(p=>[...p,{...addForm,id:Date.now(),amount:parseFloat(addForm.amount),recur:subTab}]); setAddForm({type:'expense',category:defaultCat,desc:'',amount:'',date:today}); setShowAdd(false); };
+
+  const tabBtn=(t)=>({ background:subTab===t?'#1e1e1e':'transparent', border:`1px solid ${subTab===t?'#333':'#1a1a1a'}`, color:subTab===t?'#ccc':'#444', padding:'5px 16px', fontSize:10, letterSpacing:'0.1em', fontFamily:'IBM Plex Mono', cursor:'pointer', borderRadius:1, fontWeight:subTab===t?700:400 });
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+      <div className="grid-3">
+        <Card><Stat label="Monthly Income"   value={fmt(totalIn)}  income sub="Per month" /></Card>
+        <Card><Stat label="Monthly Expenses" value={fmt(totalOut)}       danger sub="Per month" /></Card>
+        <Card><Stat label="Yearly Committed" value={fmt(yearlyTotal)}    sub={`${yearly.length} yearly subscriptions`} /></Card>
+      </div>
+
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <div style={{ display:'flex', gap:2 }}>
+          <button onClick={()=>setSubTab('monthly')} style={tabBtn('monthly')}>Monthly Subscriptions</button>
+          <button onClick={()=>setSubTab('yearly')}  style={tabBtn('yearly')}>Yearly Subscriptions</button>
+        </div>
+        <button onClick={()=>setShowAdd(!showAdd)} style={{ background: showAdd ? '#1a1a1a' : '#e8e8e8', border:'1px solid #e8e8e8', color: showAdd ? '#e8e8e8' : '#000', padding:'6px 16px', fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', fontFamily:'IBM Plex Mono', cursor:'pointer', borderRadius:1, fontWeight:700 }}>+ ADD</button>
+      </div>
+
+      {showAdd && (
+        <Card style={{ borderColor:'#2a2a2a' }}>
+          <SectionLabel>New {subTab === 'monthly' ? 'Monthly' : 'Yearly'} Subscription</SectionLabel>
+          <div className="grid-form-3">
+            <div><div style={{ fontSize:9, color:'#444', fontFamily:'IBM Plex Mono', marginBottom:5, letterSpacing:'0.1em' }}>TYPE</div>
+              <select value={addForm.type} onChange={e=>setAddForm({...addForm,type:e.target.value})} style={{ ...inp, width:'100%' }}><option value="expense">Expense</option><option value="income">Income</option></select></div>
+            <div><div style={{ fontSize:9, color:'#444', fontFamily:'IBM Plex Mono', marginBottom:5, letterSpacing:'0.1em' }}>{addForm.type==='expense' ? 'BUDGET GOAL' : 'CATEGORY'}</div>
+              <select value={addForm.category} onChange={e=>setAddForm({...addForm,category:e.target.value})} style={{ ...inp, width:'100%' }}>{addCategoryOptions.map(c=><option key={c}>{c}</option>)}</select></div>
+            <div><div style={{ fontSize:9, color:'#444', fontFamily:'IBM Plex Mono', marginBottom:5, letterSpacing:'0.1em' }}>AMOUNT ($)</div>
+              <input type="number" placeholder="0.00" value={addForm.amount} onChange={e=>setAddForm({...addForm,amount:e.target.value})} style={{ ...inp, width:'100%' }} /></div>
+            <div style={{ gridColumn:'1/-1' }}><div style={{ fontSize:9, color:'#444', fontFamily:'IBM Plex Mono', marginBottom:5, letterSpacing:'0.1em' }}>DESCRIPTION</div>
+              <input placeholder="e.g. Netflix, Adobe CC..." value={addForm.desc} onChange={e=>setAddForm({...addForm,desc:e.target.value})} style={{ ...inp, width:'100%' }} /></div>
+            <div><div style={{ fontSize:9, color:'#444', fontFamily:'IBM Plex Mono', marginBottom:5, letterSpacing:'0.1em' }}>RENEWAL DATE</div>
+              <input type="date" value={addForm.date} onChange={e=>setAddForm({...addForm,date:e.target.value})} style={{ ...inp, width:'100%' }} /></div>
+            <div style={{ gridColumn:'2/-1', display:'flex', justifyContent:'flex-end', alignItems:'flex-end', gap:8 }}>
+              <button onClick={()=>setShowAdd(false)} style={{ background:'none', border:'1px solid #222', color:'#444', padding:'7px 14px', fontSize:10, fontFamily:'IBM Plex Mono', cursor:'pointer', borderRadius:1 }}>CANCEL</button>
+              <button onClick={addNew} style={{ background:'#e8e8e8', border:'none', color:'#000', padding:'7px 20px', fontSize:10, fontFamily:'IBM Plex Mono', cursor:'pointer', borderRadius:1, fontWeight:700 }}>CONFIRM</button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      <Card style={{ padding:0 }}>
+        <div style={{ padding:'12px 16px', borderBottom:'1px solid #141414', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+          <SectionLabel>{subTab==='monthly' ? 'Monthly Subscriptions' : 'Yearly Subscriptions'}</SectionLabel>
+          <div style={{ fontSize:9, color:'#333', fontFamily:'IBM Plex Mono', marginBottom:14 }}>{list.length} items</div>
+        </div>
+        {list.length === 0 && (
+          <div style={{ padding:'32px', textAlign:'center', color:'#2a2a2a', fontFamily:'IBM Plex Mono', fontSize:11, letterSpacing:'0.1em' }}>NO {subTab.toUpperCase()} SUBSCRIPTIONS</div>
+        )}
+        {list.map(t=>{
+          const isEd=editing===t.id;
+          return (
+            <div key={t.id}>
+              {isEd ? (
+                <div style={{ padding:'12px 16px', borderBottom:'1px solid #111', background:'#111', display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
+                  <input value={editForm.desc} onChange={e=>setEditForm({...editForm,desc:e.target.value})} style={{ ...inp, flex:'1 1 160px', minWidth:120 }} placeholder="Description" />
+                  <select value={editForm.category} onChange={e=>setEditForm({...editForm,category:e.target.value})} style={{ ...inp, width:130 }}>{editCategoryOptions.map(c=><option key={c}>{c}</option>)}</select>
+                  <input type="number" value={editForm.amount} onChange={e=>setEditForm({...editForm,amount:e.target.value})} style={{ ...inp, width:90, textAlign:'right' }} placeholder="Amount" />
+                  <div style={{ display:'flex', gap:6 }}>
+                    <button onClick={()=>removeRec(t.id)} style={{ background:'none', border:'1px solid #552222', color:'#aa4444', padding:'5px 10px', fontSize:9, fontFamily:'IBM Plex Mono', cursor:'pointer', borderRadius:1 }}>REMOVE</button>
+                    <button onClick={()=>setEditing(null)} style={{ background:'none', border:'1px solid #222', color:'#444', padding:'5px 10px', fontSize:9, fontFamily:'IBM Plex Mono', cursor:'pointer', borderRadius:1 }}>CANCEL</button>
+                    <button onClick={confirmEdit} style={{ background:'#e8e8e8', border:'none', color:'#000', padding:'5px 12px', fontSize:9, fontFamily:'IBM Plex Mono', cursor:'pointer', fontWeight:700, borderRadius:1 }}>SAVE</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 8px 10px 16px', borderBottom:'1px solid #111' }}>
+                  <div style={{ width:32, height:32, background:'#161616', border:'1px solid #222', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, flexShrink:0, borderRadius:1 }}>
+                    {CAT_ICONS[t.category]||'◈'}
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:13, color:'#ccc' }}>{t.desc}</div>
+                    <div style={{ fontSize:10, color:'#3a3a3a', fontFamily:'IBM Plex Mono', letterSpacing:'0.06em' }}>{t.category} · {t.date} · {t.recur==='yearly'?'↻ YEARLY':'↻ MONTHLY'}</div>
+                  </div>
+                  <div style={{ fontFamily:'IBM Plex Mono', fontSize:14, fontWeight:700, color: t.type==='income'?'#34d399':'#ff5555' }}>
+                    {t.type==='income'?'+':'-'}{fmt(t.amount)}
+                  </div>
+                  <button onClick={()=>startEdit(t)} style={{ background:'none', border:'1px solid #222', color:'#333', padding:'4px 10px', fontSize:9, cursor:'pointer', borderRadius:1, fontFamily:'IBM Plex Mono', marginLeft:4 }}>EDIT</button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </Card>
+    </div>
+  );
+}
+
+function NavItem({ icon, label, active, onClick }) {
+  return (
+    <div onClick={onClick} className={'nav-item' + (active ? ' active' : '')}>
+      <span className="nav-icon">{icon}</span>
+      <span className="nav-label">{label}</span>
+    </div>
+  );
+}
+
+function App() {
+  const [tweaks, setTweaksState] = useLocalStorage('budget.tweaks', TWEAK_DEFAULTS);
+  const setTweak = (k, v) => setTweaksState(p => ({ ...p, [k]: v }));
+  const [view, setView] = useLocalStorage('budget.view', 'dashboard');
+  const [transactions, setTransactions] = useLocalStorage('budget.transactions', INITIAL_TRANSACTIONS);
+  const [budgets, setBudgets] = useLocalStorage('budget.budgets', INITIAL_BUDGETS);
+  const [goals, setGoals] = useLocalStorage('budget.goals', INITIAL_SAVINGS_GOALS);
+
+  const accent = tweaks.accentColor || '#c4973a';
+  useEffect(() => { document.documentElement.style.setProperty('--accent', accent); }, [accent]);
+
+  const resetAll = () => {
+    if (!confirm('Reset all data to demo defaults? This will erase your transactions, budgets, and goals.')) return;
+    setTransactions(INITIAL_TRANSACTIONS);
+    setBudgets(INITIAL_BUDGETS);
+    setGoals(INITIAL_SAVINGS_GOALS);
+  };
+
+  const views = [
+    { id:'dashboard',    icon:'◈', label:'Dashboard'   },
+    { id:'transactions', icon:'◉', label:'Transactions' },
+    { id:'budget',       icon:'◎', label:'Budget Goals' },
+    { id:'savings',      icon:'◆', label:'Savings'      },
+    { id:'recurring',    icon:'↻', label:'Recurring'    },
+  ];
+
+  return (
+    <div className="app-shell">
+      <div className="sidebar">
+        <div className="sidebar-brand">
+          <div style={{ fontSize:22, fontWeight:800, letterSpacing:'0.22em', color:accent, fontFamily:'Exo 2', textTransform:'uppercase' }}>BUDGET</div>
+          <div style={{ fontSize:9, letterSpacing:'0.24em', color:'#2a2a2a', marginTop:2, fontFamily:'Exo 2', fontWeight:600, textTransform:'uppercase' }}>Performance Finance</div>
+        </div>
+
+        <div className="sidebar-period">
+          <div style={{ fontSize:9, color:'#2a2a2a', fontFamily:'IBM Plex Mono', letterSpacing:'0.12em', marginBottom:6 }}>PERIOD</div>
+          <div style={{ fontSize:13, color:'#888', fontFamily:'IBM Plex Mono', fontWeight:700 }}>{new Date().toLocaleString('en-US',{month:'short',year:'numeric'}).toUpperCase()}</div>
+        </div>
+
+        {views.map(v=><NavItem key={v.id} icon={v.icon} label={v.label} active={view===v.id} onClick={()=>setView(v.id)} />)}
+
+        <div className="sidebar-bottom">
+          <div style={{ fontSize:9, color:'#2a2a2a', fontFamily:'IBM Plex Mono', letterSpacing:'0.12em', marginBottom:10 }}>ACCENT COLOR</div>
+          <div className="accent-row" style={{ display:'flex', flexDirection:'column', gap:4, marginBottom:16 }}>
+            {THEME_OPTIONS.map(opt => {
+              const isActive = accent === opt.value;
+              return (
+                <button key={opt.value} onClick={()=>setTweak('accentColor', opt.value)} title={opt.label} style={{
+                  display:'flex', alignItems:'center', gap:8, background:'none', border:'none',
+                  cursor:'pointer', padding:'4px 0', textAlign:'left'
+                }}>
+                  <span className="dot" style={{ display:'inline-block', width:12, height:12, borderRadius:0, background: opt.value, flexShrink:0, opacity: isActive ? 1 : 0.4, border: isActive ? '1px solid #555' : 'none' }} />
+                  <span style={{ fontSize:10, fontFamily:'IBM Plex Mono', color: isActive ? '#888' : '#333', letterSpacing:'0.08em' }}>{opt.label}</span>
+                  {isActive && <div style={{ marginLeft:'auto', width:4, height:4, background:opt.value, borderRadius:0 }} />}
+                </button>
+              );
+            })}
+          </div>
+          <button onClick={resetAll} className="reset-btn" style={{ width:'100%', background:'transparent', border:'1px solid #222', color:'#444', padding:'6px', fontSize:9, fontFamily:'IBM Plex Mono', cursor:'pointer', letterSpacing:'0.12em', borderRadius:1 }}>↺ RESET DATA</button>
+        </div>
+      </div>
+
+      <div className="main">
+        <div className="main-header">
+          <div>
+            <div className="main-title" style={{ fontSize:24, fontWeight:800, letterSpacing:'0.08em', fontFamily:'Exo 2', textTransform:'uppercase', color:'#e8e8e8' }}>
+              {views.find(v=>v.id===view)?.label}
+            </div>
+            <div style={{ fontSize:10, color:'#2a2a2a', fontFamily:'IBM Plex Mono', letterSpacing:'0.08em', marginTop:2 }}>
+              {new Date().toLocaleString('en-US',{month:'long',year:'numeric'}).toUpperCase()} · {transactions.length} TRANSACTIONS
+            </div>
+          </div>
+          <div className="main-header-date">
+            {new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'}).toUpperCase()}
+          </div>
+        </div>
+
+        <div className="main-body">
+          {view==='dashboard'    && <Dashboard        transactions={transactions} budgets={budgets} />}
+          {view==='transactions' && <TransactionsView transactions={transactions} setTransactions={setTransactions} budgets={budgets} />}
+          {view==='budget'       && <BudgetGoalsView  transactions={transactions} budgets={budgets} setBudgets={setBudgets} />}
+          {view==='savings'      && <SavingsView      goals={goals} setGoals={setGoals} />}
+          {view==='recurring'    && <RecurringView    transactions={transactions} setTransactions={setTransactions} budgets={budgets} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
